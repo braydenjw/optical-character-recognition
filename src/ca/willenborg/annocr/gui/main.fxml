@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ca.willenborg.annocr.gui.controllers.MainController">
+   <children>
+      <VBox alignment="TOP_CENTER" layoutX="103.0" layoutY="81.0">
+         <children>
+            <HBox alignment="BOTTOM_CENTER" prefHeight="25.0" prefWidth="364.0">
+               <children>
+                  <Button fx:id="grayscaleButton" mnemonicParsing="false" onAction="#grayscaleButtonPressed" text="Grayscale">
+                     <HBox.margin>
+                        <Insets left="5.0" right="5.0" />
+                     </HBox.margin>
+                  </Button>
+                  <Button fx:id="binaryButton" mnemonicParsing="false" onAction="#binaryButtonPressed" text="Binary">
+                     <HBox.margin>
+                        <Insets left="5.0" right="5.0" />
+                     </HBox.margin>
+                  </Button>
+                  <Button fx:id="updateButton" mnemonicParsing="false" onAction="#updateButtonPressed" text="Update">
+                     <HBox.margin>
+                        <Insets left="5.0" right="5.0" />
+                     </HBox.margin>
+                  </Button>
+               </children>
+            </HBox>
+         </children></VBox>
+      <ImageView fx:id="previewImage" fitHeight="259.0" fitWidth="377.0" layoutX="112.0" layoutY="113.0" pickOnBounds="true" preserveRatio="true" />
+   </children>
+</Pane>
