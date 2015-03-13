@@ -8,7 +8,7 @@
 
 <Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ca.willenborg.annocr.gui.controllers.MainController">
    <children>
-      <VBox alignment="TOP_CENTER" layoutX="103.0" layoutY="81.0">
+      <VBox alignment="TOP_CENTER" prefHeight="400.0" prefWidth="600.0">
          <children>
             <HBox alignment="BOTTOM_CENTER" prefHeight="25.0" prefWidth="364.0">
                <children>
@@ -30,6 +30,6 @@
                </children>
             </HBox>
          </children></VBox>
-      <ImageView fx:id="previewImage" fitHeight="259.0" fitWidth="377.0" layoutX="112.0" layoutY="113.0" pickOnBounds="true" preserveRatio="true" />
+      <ImageView fx:id="previewImage" layoutX="4.0" layoutY="49.0" pickOnBounds="true" preserveRatio="true" />
    </children>
 </Pane>

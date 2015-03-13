@@ -1,12 +1,14 @@
 package ca.willenborg.annocr.gui.controllers;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
 import ca.willenborg.annocr.DocumentImage;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
 public class MainController {
@@ -22,19 +24,17 @@ public class MainController {
     
     @FXML
     void grayscaleButtonPressed(ActionEvent event) {
-    	docImage.convertToGrayscale();
-    	previewImage.setImage(docImage.image);
+    	previewImage.setImage(docImage.Image);
     }
 
     @FXML
     void binaryButtonPressed(ActionEvent event) {
-    	docImage.convertToBinary();
-    	previewImage.setImage(docImage.image);
     }
 
     @FXML
     void updateButtonPressed(ActionEvent event) {
-    	docImage.lineSegment();
+    	List<Image> imageList = docImage.GenerateCharacterImages();
+    	previewImage.setImage(imageList.get(9));
     }
 
     @FXML
@@ -45,6 +45,6 @@ public class MainController {
         assert previewImage != null : "fx:id=\"previewImage\" was not injected: check your FXML file 'main.fxml'.";
         
         docImage = new DocumentImage("document.png");
-        previewImage.setImage(docImage.image);
+        previewImage.setImage(docImage.Image);
     }
 }
