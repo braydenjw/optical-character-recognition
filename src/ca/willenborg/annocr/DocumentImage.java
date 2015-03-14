@@ -1,11 +1,10 @@
 package ca.willenborg.annocr;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang3.ArrayUtils;
-
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.PixelWriter;
@@ -14,16 +13,22 @@ import javafx.scene.paint.Color;
 
 public class DocumentImage {
 	
-	private static final double BRIGHTNESS_THRESHOLD = 0.5;
-	private static final int MIN_LINE_HEIGHT = 5;
-	private static final int MIN_LINE_SPACE_HEIGHT = 3;
+	private /*static final*/ double BRIGHTNESS_THRESHOLD = 0.8;
+	private /*static final*/ int MIN_LINE_HEIGHT = 5;
+	private /*static final*/ int MIN_LINE_SPACE_HEIGHT = 2;
 	
 	public Image Image;
 	public boolean[][] BinaryImage;
 	
+	private Image _greyscaleImage;
+	private boolean[][] _binaryImage;
 	private int[] _histogram;
 	private int _width;
 	private int _height;
+	
+	/********************************************************************************
+	 * Constructors & Destructors
+	 ********************************************************************************/
 	
 	public DocumentImage(String imageUrl) 
 	{
@@ -35,7 +40,28 @@ public class DocumentImage {
 		}
 	}
 	
-	public Image GenerateGreyscale(PixelReader colourPixelReader) 
+	/********************************************************************************
+	 * Control Methods
+	 ********************************************************************************/
+	
+	public Image GenerateGreyscale() 
+	{
+		_greyscaleImage = GenerateGreyscale(Image.getPixelReader());
+		return _greyscaleImage;
+	}
+	
+	public Image GenerateBinary()
+	{
+		if(_greyscaleImage == null) GenerateGreyscale();
+		_binaryImage = GenerateBinary(_greyscaleImage.getPixelReader());
+		return Boolean2dToImage(_binaryImage);
+	}
+	
+	/********************************************************************************
+	 * Helper Methods
+	 ********************************************************************************/
+	
+	private Image GenerateGreyscale(PixelReader colourPixelReader) 
 	{
 		WritableImage greyscaleImage = new WritableImage(_width, _height);
 		PixelWriter pixelWriter = greyscaleImage.getPixelWriter();
@@ -68,6 +94,27 @@ public class DocumentImage {
 		
 		return binary;
 	}
+	
+	private Image Boolean2dToImage(boolean[][] line)
+	{
+		int width = line[0].length;
+		int height = line.length;
+		WritableImage writImage = new WritableImage(width, height);
+		PixelWriter pixelWriter = writImage.getPixelWriter();
+		
+		for(int y = 0; y < height; y++) {
+			for(int x = 0; x < width; x++) {
+				if(line[y][x] == true) {
+					pixelWriter.setColor(x, y, Color.BLACK);
+				} else {
+					pixelWriter.setColor(x, y, Color.WHITE);
+				}
+			}
+		}
+		
+		return (Image) writImage;
+	}
+	
 	
 	/**
 	 * Desc:	Generates a histogram of number of true values in each row of 2D boolean array
@@ -125,32 +172,27 @@ public class DocumentImage {
 	
 	public List<Image> GenerateCharacterImages()
 	{
-		Image greyscaleImage = this.GenerateGreyscale(Image.getPixelReader());
-		boolean[][] binaryImage = this.GenerateBinary(greyscaleImage.getPixelReader());
-		int[] histogram = this.GenerateHistogram(binaryImage);
-		List<boolean[][]> lineImages = this.GenerateLineSegments(histogram, binaryImage);
+		int[] histogram = this.GenerateHistogram(_binaryImage);
+	
+		DescriptiveStatistics stats = new DescriptiveStatistics();
+		int contiguous = 0;
+		for(int i : histogram) {
+			if(i == 0) {
+				contiguous++;
+			} else if (contiguous > 0){
+				stats.addValue(contiguous);
+				contiguous = 0;
+			}
+		}
+		MIN_LINE_SPACE_HEIGHT = (int) stats.getPercentile(10);
+		
+		List<boolean[][]> lineImages = this.GenerateLineSegments(histogram, _binaryImage);
 		List<Image> imageList = new ArrayList<Image>();
 		
 		System.out.println("histogram = " + ArrayUtils.toString(histogram));
 		
 		for(boolean[][] line : lineImages) {
-			int width = line[0].length;
-			int height = line.length;
-			
-			WritableImage writImage = new WritableImage(width, height);
-			PixelWriter pixelWriter = writImage.getPixelWriter();
-			
-			for(int y = 0; y < height; y++) {
-				for(int x = 0; x < width; x++) {
-					if(line[y][x] == true) {
-						pixelWriter.setColor(x, y, Color.BLACK);
-					} else {
-						pixelWriter.setColor(x, y, Color.WHITE);
-					}
-				}
-			}
-			
-			imageList.add((Image) writImage);
+			imageList.add(Boolean2dToImage(line));
 		}
 		
 		return imageList;

@@ -15,36 +15,55 @@ public class MainController {
 
     @FXML private ResourceBundle resources;
     @FXML private URL location;
-    @FXML private Button binaryButton;
-    @FXML private Button updateButton;
-    @FXML private Button grayscaleButton;
+    @FXML private Button nextButton;
     @FXML private ImageView previewImage;
 
-    private DocumentImage docImage;
-    
-    @FXML
-    void grayscaleButtonPressed(ActionEvent event) {
-    	previewImage.setImage(docImage.Image);
-    }
+    private DocumentImage _docImage;
+    private List<Image> _lineImages;
+    private State _state;
+    private int _lineIndex = 0;
 
     @FXML
-    void binaryButtonPressed(ActionEvent event) {
-    }
-
-    @FXML
-    void updateButtonPressed(ActionEvent event) {
-    	List<Image> imageList = docImage.GenerateCharacterImages();
-    	previewImage.setImage(imageList.get(9));
+    void nextButtonPressed(ActionEvent event) {
+    	switch(_state) {
+    		case GreyScale:
+    			previewImage.setImage(_docImage.GenerateGreyscale());
+    			_state = State.Binarize;
+    			break;
+    		case Binarize:
+    			previewImage.setImage(_docImage.GenerateBinary());
+    			_state = State.ViewLines;
+    			break;
+    		case ViewLines:
+    			if (_lineIndex == 0) {
+    				_lineImages = _docImage.GenerateCharacterImages();
+    			}
+    			if(_lineIndex == _lineImages.size()) {
+    				_state = State.Complete;
+    			} else {
+    				previewImage.setImage(_lineImages.get(_lineIndex));
+    			}
+    			_lineIndex++;
+    			break;
+    		case Complete:
+    			break;
+    	}
     }
 
     @FXML
     void initialize() {
-        assert binaryButton != null : "fx:id=\"binaryButton\" was not injected: check your FXML file 'main.fxml'.";
-        assert updateButton != null : "fx:id=\"updateButton\" was not injected: check your FXML file 'main.fxml'.";
-        assert grayscaleButton != null : "fx:id=\"grayscaleButton\" was not injected: check your FXML file 'main.fxml'.";
+        assert nextButton != null : "fx:id=\"binaryButton\" was not injected: check your FXML file 'main.fxml'.";
         assert previewImage != null : "fx:id=\"previewImage\" was not injected: check your FXML file 'main.fxml'.";
         
-        docImage = new DocumentImage("document.png");
-        previewImage.setImage(docImage.Image);
+        _docImage = new DocumentImage("document.png");
+        _state = State.GreyScale;
+        previewImage.setImage(_docImage.Image);
     }
+    
+    private enum State {
+    	GreyScale,
+    	Binarize,
+    	ViewLines,
+    	Complete;
+    };
 }
