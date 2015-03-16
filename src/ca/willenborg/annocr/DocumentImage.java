@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.javatuples.Tuple;
 
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
@@ -184,6 +183,7 @@ public class DocumentImage {
 			for(int i = 0; i < lineLocation.getValue(); i++) {
 				line[i] = orig[lineLocation.getKey() + i].clone();
 			}
+			lines.add(line);
 		}
 		
 		return lines;		
