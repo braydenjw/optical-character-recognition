@@ -3,13 +3,15 @@ package ca.willenborg.annocr;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.javatuples.Tuple;
+
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
+import javafx.util.Pair;
 
 public class DocumentImage {
 	
@@ -138,27 +140,30 @@ public class DocumentImage {
 		return histogram;
 	}
 	
-	private List<boolean[][]> GenerateLineSegments(int[] histogram, boolean[][] binaryImage) {
-		List<boolean[][]> lines = new ArrayList<boolean[][]>();
+	private List<Pair<Integer, Integer>> GenerateLineLocations(int[] histogram, int minLineSpaceHeight, int startLocation, int length)
+	{
+		List<Pair<Integer, Integer>> lineLocations = new ArrayList<Pair<Integer, Integer>>();
+		if (startLocation < 0) startLocation = 0;
+		if (length < 0) length = histogram.length;
+		
 		int firstNonZero = -1;
 		int blankLineCount = 0;
 		
-		for(int i = 0; i < histogram.length; i++) {
+		for(int i = startLocation; (i < histogram.length) && (i < length + startLocation); i++) {
 			if(firstNonZero == -1) {
 				if(histogram[i] > 0) {
 					firstNonZero = i;
 				}
 			} else {
-				if ((histogram[i] == 0) || (i == histogram.length - 1)) {
-					if(blankLineCount < MIN_LINE_SPACE_HEIGHT) {
+				if((i == histogram.length - 1) || (i == length + startLocation - 1)) {
+					if(i > firstNonZero) {
+						lineLocations.add(new Pair<Integer, Integer>(firstNonZero, i - firstNonZero));	
+					}
+				} else if (histogram[i] == 0) {
+					if(blankLineCount < minLineSpaceHeight) {
 						blankLineCount++;
 					} else {
-						boolean[][] line = new boolean[i - firstNonZero - MIN_LINE_SPACE_HEIGHT][_width];
-						for(int j = firstNonZero; j < i - MIN_LINE_SPACE_HEIGHT; j++) {
-							line[j - firstNonZero] = binaryImage[j].clone();
-						}
-						lines.add(line);
-						
+						lineLocations.add(new Pair<Integer, Integer>(firstNonZero, i - firstNonZero - minLineSpaceHeight));						
 						firstNonZero = -1;
 					}
 				} else {
@@ -167,13 +172,28 @@ public class DocumentImage {
 			}	
 		}
 		
-		return lines;
+		return lineLocations;
 	}
 	
-	public List<Image> GenerateCharacterImages()
+	private List<boolean[][]> GenerateLinesFromLocations(boolean[][] orig, List<Pair<Integer, Integer>> lineLocations)
 	{
-		int[] histogram = this.GenerateHistogram(_binaryImage);
+		List<boolean[][]> lines = new ArrayList<boolean[][]>();
+		
+		for(Pair<Integer, Integer> lineLocation : lineLocations) {
+			boolean[][] line = new boolean[lineLocation.getValue()][_width];
+			for(int i = 0; i < lineLocation.getValue(); i++) {
+				line[i] = orig[lineLocation.getKey() + i].clone();
+			}
+		}
+		
+		return lines;		
+	}
 	
+	private List<boolean[][]> GenerateLineSegments(int[] histogram, boolean[][] binaryImage) {
+		List<Pair<Integer, Integer>> lineLocations = new ArrayList<Pair<Integer, Integer>>();
+		List<boolean[][]> lines = new ArrayList<boolean[][]>();
+		
+		// Make the minimum height of spaces to be a percentile of the size of all spaces
 		DescriptiveStatistics stats = new DescriptiveStatistics();
 		int contiguous = 0;
 		for(int i : histogram) {
@@ -184,14 +204,43 @@ public class DocumentImage {
 				contiguous = 0;
 			}
 		}
-		MIN_LINE_SPACE_HEIGHT = (int) stats.getPercentile(10);
+		int minLineSpaceHeight = (int) stats.getPercentile(20);
 		
-		List<boolean[][]> lineImages = this.GenerateLineSegments(histogram, _binaryImage);
+		lineLocations = GenerateLineLocations(histogram, minLineSpaceHeight, -1, -1);
+		
+		// Make the minimum height of spaces to be a percentile of the size of all spaces
+		stats.clear();
+		for(Pair<Integer, Integer> lineLocation : lineLocations) {
+			stats.addValue(lineLocation.getValue());
+		}
+		int maxLineHeight = (int) stats.getPercentile(60);
+		
+		for(int i = minLineSpaceHeight - 1; i > 0; i--) {
+			for(int j = 0; j < lineLocations.size(); j++) {
+				if(lineLocations.get(j).getValue() > maxLineHeight) {
+					List<Pair<Integer, Integer>> subLineLocations = GenerateLineLocations(histogram, i, lineLocations.get(j).getKey(), lineLocations.get(j).getValue());
+					if(subLineLocations.size() > 1) {
+						for(int k = 0; k < subLineLocations.size(); k++) {
+							lineLocations.add(k + j + 1, subLineLocations.get(k));
+						}
+						lineLocations.remove(j);
+						j += subLineLocations.size() - 1;
+					}
+				}
+			}
+		}
+		
+		lines = GenerateLinesFromLocations(binaryImage, lineLocations);
+		
+		return lines;
+	}
+	
+	public List<Image> GenerateCharacterImages()
+	{
 		List<Image> imageList = new ArrayList<Image>();
+		int[] histogram = this.GenerateHistogram(_binaryImage);
 		
-		System.out.println("histogram = " + ArrayUtils.toString(histogram));
-		
-		for(boolean[][] line : lineImages) {
+		for(boolean[][] line : GenerateLineSegments(histogram, _binaryImage)) {
 			imageList.add(Boolean2dToImage(line));
 		}
 		
