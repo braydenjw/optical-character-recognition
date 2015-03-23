@@ -14,9 +14,9 @@ import javafx.util.Pair;
 
 public class DocumentImage {
 	
-	private /*static final*/ double BRIGHTNESS_THRESHOLD = 0.8;
-	private /*static final*/ int MIN_LINE_HEIGHT = 5;
-	private /*static final*/ int MIN_LINE_SPACE_HEIGHT = 2;
+	private static final double BRIGHTNESS_THRESHOLD = 0.8;
+	private int MIN_LINE_HEIGHT = 5;
+	private int MIN_LINE_SPACE_HEIGHT = 2;
 	
 	public Image Image;
 	public boolean[][] BinaryImage;
@@ -34,11 +34,6 @@ public class DocumentImage {
 	public DocumentImage(String imageUrl) 
 	{
 		Image = new Image(imageUrl);
-		
-		if (Image != null) {
-			_width = (int) Image.getWidth();
-			_height = (int) Image.getHeight();
-		}
 	}
 	
 	/********************************************************************************
@@ -47,29 +42,46 @@ public class DocumentImage {
 	
 	public Image GenerateGreyscale() 
 	{
-		_greyscaleImage = GenerateGreyscale(Image.getPixelReader());
+		_greyscaleImage = GenerateGreyscale(Image.getPixelReader(), (int) Image.getWidth(), (int) Image.getHeight());
 		return _greyscaleImage;
 	}
 	
 	public Image GenerateBinary()
 	{
 		if(_greyscaleImage == null) GenerateGreyscale();
-		_binaryImage = GenerateBinary(_greyscaleImage.getPixelReader());
+		_binaryImage = GenerateBinary(_greyscaleImage.getPixelReader(), (int)_greyscaleImage.getWidth(), (int)_greyscaleImage.getHeight());
 		return Boolean2dToImage(_binaryImage);
+	}
+	
+	public List<Image> GenerateLineImages()
+	{
+		List<Image> imageList = new ArrayList<Image>();
+		int[] histogram = this.GenerateHistogram(_binaryImage);
+		
+		for(boolean[][] line : GenerateLineSegments(histogram, _binaryImage)) {
+			imageList.add(Boolean2dToImage(line));
+		}
+		
+		return imageList;
+	}
+	
+	public List<CharacterImage> GenerateCharacterImages() {
+		return null;
+		
 	}
 	
 	/********************************************************************************
 	 * Helper Methods
 	 ********************************************************************************/
 	
-	private Image GenerateGreyscale(PixelReader colourPixelReader) 
+	private static Image GenerateGreyscale(PixelReader colourPixelReader, int width, int height) 
 	{
-		WritableImage greyscaleImage = new WritableImage(_width, _height);
+		WritableImage greyscaleImage = new WritableImage(width, height);
 		PixelWriter pixelWriter = greyscaleImage.getPixelWriter();
 		Color colour;
 		
-		for (int x = 0; x < _width; x++) {
-			for (int y = 0; y < _height; y++) {
+		for (int x = 0; x < width; x++) {
+			for (int y = 0; y < height; y++) {
 				colour = colourPixelReader.getColor(x, y);
 				pixelWriter.setColor(x, y, colour.grayscale());
 			}
@@ -78,12 +90,12 @@ public class DocumentImage {
 		return greyscaleImage;
 	}
 	
-	private boolean[][] GenerateBinary(PixelReader greyscalePixelReader) 
+	private static boolean[][] GenerateBinary(PixelReader greyscalePixelReader, int width, int height) 
 	{
-		boolean[][] binary = new boolean[_height][_width];
+		boolean[][] binary = new boolean[height][width];
 		
-		for (int x = 0; x < _width; x++) {
-			for (int y = 0; y < _height; y++) {
+		for (int x = 0; x < width; x++) {
+			for (int y = 0; y < height; y++) {
 				double brightness = greyscalePixelReader.getColor(x, y).getBrightness();
 				if (brightness < BRIGHTNESS_THRESHOLD) {
 					binary[y][x] = true;
@@ -125,11 +137,11 @@ public class DocumentImage {
 	 */
 	private int[] GenerateHistogram(boolean[][] binary)
 	{
-		int[] histogram = new int[_height];
+		int[] histogram = new int[binary[0].length];
 		
-		for (int y = 0; y < _height; y++) {
+		for (int y = 0; y < binary.length; y++) {
 			histogram[y] = 0;
-			for (int x = 0; x < _width; x++) {
+			for (int x = 0; x < binary[0].length; x++) {
 				if (binary[y][x] == true) {
 					histogram[y]++;
 				}
@@ -139,7 +151,7 @@ public class DocumentImage {
 		return histogram;
 	}
 	
-	private List<Pair<Integer, Integer>> GenerateLineLocations(int[] histogram, int minLineSpaceHeight, int startLocation, int length)
+	private static List<Pair<Integer, Integer>> GenerateLineLocations(int[] histogram, int minLineSpaceHeight, int startLocation, int length)
 	{
 		List<Pair<Integer, Integer>> lineLocations = new ArrayList<Pair<Integer, Integer>>();
 		if (startLocation < 0) startLocation = 0;
@@ -174,12 +186,12 @@ public class DocumentImage {
 		return lineLocations;
 	}
 	
-	private List<boolean[][]> GenerateLinesFromLocations(boolean[][] orig, List<Pair<Integer, Integer>> lineLocations)
+	private static List<boolean[][]> GenerateLinesFromLocations(boolean[][] orig, List<Pair<Integer, Integer>> lineLocations)
 	{
 		List<boolean[][]> lines = new ArrayList<boolean[][]>();
 		
 		for(Pair<Integer, Integer> lineLocation : lineLocations) {
-			boolean[][] line = new boolean[lineLocation.getValue()][_width];
+			boolean[][] line = new boolean[lineLocation.getValue()][orig.length];
 			for(int i = 0; i < lineLocation.getValue(); i++) {
 				line[i] = orig[lineLocation.getKey() + i].clone();
 			}
@@ -189,7 +201,7 @@ public class DocumentImage {
 		return lines;		
 	}
 	
-	private List<boolean[][]> GenerateLineSegments(int[] histogram, boolean[][] binaryImage) {
+	private static List<boolean[][]> GenerateLineSegments(int[] histogram, boolean[][] binaryImage) {
 		List<Pair<Integer, Integer>> lineLocations = new ArrayList<Pair<Integer, Integer>>();
 		List<boolean[][]> lines = new ArrayList<boolean[][]>();
 		
@@ -233,19 +245,6 @@ public class DocumentImage {
 		lines = GenerateLinesFromLocations(binaryImage, lineLocations);
 		
 		return lines;
-	}
-	
-	public List<Image> GenerateCharacterImages()
-	{
-		List<Image> imageList = new ArrayList<Image>();
-		int[] histogram = this.GenerateHistogram(_binaryImage);
-		
-		for(boolean[][] line : GenerateLineSegments(histogram, _binaryImage)) {
-			imageList.add(Boolean2dToImage(line));
-		}
-		
-		return imageList;
-	}
-	
+	}	
 	
 }

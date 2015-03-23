@@ -36,7 +36,7 @@ public class MainController {
     			break;
     		case ViewLines:
     			if (_lineIndex == 0) {
-    				_lineImages = _docImage.GenerateCharacterImages();
+    				_lineImages = _docImage.GenerateLineImages();
     			}
     			if(_lineIndex == _lineImages.size()) {
     				_state = State.Complete;

@@ -7,10 +7,10 @@ import javafx.scene.paint.Color;
 public class CharacterImage {
 	private static final double BRIGHTNESS_THRESHOLD = 0.5;
 	
-	private Image image;
+	private boolean[][] _binaryImage;
 
-	public CharacterImage(/*Image*/String characterImage) {
-		image = new Image(characterImage);
+	public CharacterImage(boolean[][] binaryImage) {
+		_binaryImage = binaryImage;
 	}
 	
 	
@@ -19,7 +19,7 @@ public class CharacterImage {
 	 * Params:	None.
 	 * Return:	Int array of size 4. Top bound, right bound, bottom bound, left bound.
 	 * SideFX:	None.
-	 */
+	 *
 	public int[] boundingBox() {
 		int top = -1;
 		int right = -1;
@@ -81,5 +81,5 @@ public class CharacterImage {
 		
 		int ret[] = {top, right, bottom, left};
 		return ret;
-	}
+	}*/
 }
