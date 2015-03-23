@@ -3,6 +3,7 @@ package ca.willenborg.annocr;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import javafx.scene.image.Image;
@@ -23,9 +24,7 @@ public class DocumentImage {
 	
 	private Image _greyscaleImage;
 	private boolean[][] _binaryImage;
-	private int[] _histogram;
-	private int _width;
-	private int _height;
+	private List<boolean[][]> lineBinaryImages;
 	
 	/********************************************************************************
 	 * Constructors & Destructors
@@ -56,9 +55,11 @@ public class DocumentImage {
 	public List<Image> GenerateLineImages()
 	{
 		List<Image> imageList = new ArrayList<Image>();
-		int[] histogram = this.GenerateHistogram(_binaryImage);
+		int[] histogram = this.GenerateHistogram(_binaryImage, false);
 		
-		for(boolean[][] line : GenerateLineSegments(histogram, _binaryImage)) {
+		lineBinaryImages = GenerateLineSegments(histogram, _binaryImage);
+		
+		for(boolean[][] line : lineBinaryImages) {
 			imageList.add(Boolean2dToImage(line));
 		}
 		
@@ -66,8 +67,12 @@ public class DocumentImage {
 	}
 	
 	public List<CharacterImage> GenerateCharacterImages() {
-		return null;
+		List<CharacterImage> characterImages = new ArrayList<CharacterImage>();
 		
+		int[] histogram = this.GenerateHistogram(lineBinaryImages.get(0), true);
+		System.out.println(ArrayUtils.toString(histogram));
+		
+		return characterImages;
 	}
 	
 	/********************************************************************************
@@ -135,15 +140,32 @@ public class DocumentImage {
 	 * Return:	Int array containing number of true values in each row of the 2D boolean array given.
 	 * SideFX:	None.
 	 */
-	private int[] GenerateHistogram(boolean[][] binary)
+	private int[] GenerateHistogram(boolean[][] binary, boolean column)
 	{
-		int[] histogram = new int[binary[0].length];
+		int width, height;
+		int[] histogram;
 		
-		for (int y = 0; y < binary.length; y++) {
+		if (column == true) {
+			width = binary[0].length;
+			height = binary.length;
+			histogram = new int[width];
+		} else {
+			width = binary.length;
+			height = binary[0].length;
+			histogram = new int[height];
+		}
+		
+		for (int y = 0; y < width; y++) {
 			histogram[y] = 0;
-			for (int x = 0; x < binary[0].length; x++) {
-				if (binary[y][x] == true) {
-					histogram[y]++;
+			for (int x = 0; x < height; x++) {
+				if (column == true) {
+					if (binary[x][y] == true) {
+						histogram[y]++;
+					}
+				} else {
+					if (binary[y][x] == true) {
+						histogram[y]++;
+					}
 				}
 			}
 		}
@@ -246,5 +268,30 @@ public class DocumentImage {
 		
 		return lines;
 	}	
+	
+	private static List<Pair<Integer, Integer>> GenerateCharacterLocations(int[] histogram)
+	{
+		List<Pair<Integer, Integer>> characterLocations = new ArrayList<Pair<Integer, Integer>>();
+		int firstNonZero = -1;
+		
+		for(int i = 0; i < histogram.length; i++) {
+			if(firstNonZero == -1) {
+				if(histogram[i] > 0) {
+					firstNonZero = i;
+				}
+			} else {
+				if(i == histogram.length - 1) {
+					if(i > firstNonZero) {
+						characterLocations.add(new Pair<Integer, Integer>(firstNonZero, i - firstNonZero));	
+					}
+				} else if (histogram[i] == 0) {
+					characterLocations.add(new Pair<Integer, Integer>(firstNonZero, i - firstNonZero);						
+					firstNonZero = -1;
+				}
+			}	
+		}
+		
+		return characterLocations;
+	}
 	
 }

@@ -39,11 +39,15 @@ public class MainController {
     				_lineImages = _docImage.GenerateLineImages();
     			}
     			if(_lineIndex == _lineImages.size()) {
-    				_state = State.Complete;
+    				_state = State.ReadCharacters;
     			} else {
     				previewImage.setImage(_lineImages.get(_lineIndex));
     			}
     			_lineIndex++;
+    			break;
+    		case ReadCharacters:
+    			_docImage.GenerateCharacterImages();
+    			_state = State.Complete;
     			break;
     		case Complete:
     			break;
@@ -64,6 +68,7 @@ public class MainController {
     	GreyScale,
     	Binarize,
     	ViewLines,
+    	ReadCharacters,
     	Complete;
     };
 }
