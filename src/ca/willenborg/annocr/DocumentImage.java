@@ -1,7 +1,10 @@
 package ca.willenborg.annocr;
 
+import java.awt.Point;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -27,7 +30,7 @@ public class DocumentImage {
 	private List<boolean[][]> lineBinaryImages;
 	
 	/********************************************************************************
-	 * Constructors & Destructors
+	 * Constructors
 	 ********************************************************************************/
 	
 	public DocumentImage(String imageUrl) 
@@ -49,6 +52,7 @@ public class DocumentImage {
 	{
 		if(_greyscaleImage == null) GenerateGreyscale();
 		_binaryImage = GenerateBinary(_greyscaleImage.getPixelReader(), (int)_greyscaleImage.getWidth(), (int)_greyscaleImage.getHeight());
+		TwoPassConnectedComponent(_binaryImage);
 		return Boolean2dToImage(_binaryImage);
 	}
 	
@@ -78,6 +82,69 @@ public class DocumentImage {
 	/********************************************************************************
 	 * Helper Methods
 	 ********************************************************************************/
+	
+	private static List<Pair<Point, Point>> TwoPassConnectedComponent(LabeledBinaryImage document) 
+	{
+		List<Pair<Point, Point>> charLocs = new ArrayList<Pair<Point, Point>>();
+		Map<Integer, Label> labels = new HashMap<Integer, Label>(); 
+		Map<Integer, List<Pixel>> patterns = new HashMap<Integer, List<Pixel>>();
+		int highestLabel = 1;
+		
+		// First Pass
+		for(int y = 0; y < document.GetHeight(); y++) {
+			for(int x = 0; x < document.GetWidth(); x++) {
+				
+				Point point = new Point(x, y);
+				
+				// If the current pixel is a foreground pixel
+				if(document.GetPixel(point) == false) continue;
+				
+				// If the current pixel has no labeled neighbours
+				List<Integer> neighbouringLabels = document.GetNeighbouringLabels(point);
+				int newLabel = -1;
+				
+				if(neighbouringLabels.isEmpty() == true) {
+					newLabel = highestLabel;
+					labels.put(newLabel, new Label(newLabel));
+				} else {
+					for(int label : neighbouringLabels) {
+						label = labels.get(label).FindRoot().GetName();
+						newLabel = (label < newLabel) || (newLabel == -1) ? label : newLabel;
+					}
+					Label root = labels.get(newLabel).FindRoot();
+					
+					for(int neighbour : neighbouringLabels) {
+						if (root.GetName() != labels.get(neighbour).FindRoot().GetName()) {
+							labels.get(neighbour).Join(labels.get(newLabel));
+						}
+					}
+				}
+					
+				document.SetLabel(point, newLabel);
+			}
+		}
+		
+		// Second Pass
+		for (int y = 0; y < document.GetHeight(); y++) {
+            for (int x = 0; x < document.GetWidth(); x++) {
+            	Point point = new Point(x, y);
+                int patternNumber = document.GetLabel(point);
+
+                if (patternNumber != 0)
+                {
+                    patternNumber = labels.get(patternNumber).FindRoot().GetName();
+
+                    if (!patterns.containsKey(patternNumber)) {
+                    	patterns.put(patternNumber, new ArrayList<Pixel>());
+                    }
+
+                    patterns.get(patternNumber).add(new Pixel(new Point(x, y), true));
+                }
+            }
+        }
+		
+		return charLocs;
+	}
 	
 	private static Image GenerateGreyscale(PixelReader colourPixelReader, int width, int height) 
 	{
