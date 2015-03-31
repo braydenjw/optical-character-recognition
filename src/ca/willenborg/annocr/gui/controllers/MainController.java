@@ -19,9 +19,8 @@ public class MainController {
     @FXML private ImageView previewImage;
 
     private DocumentImage _docImage;
-    private List<Image> _lineImages;
     private State _state;
-    private int _lineIndex = 0;
+    private int _charIndex = 0;
 
     @FXML
     void nextButtonPressed(ActionEvent event) {
@@ -32,22 +31,11 @@ public class MainController {
     			break;
     		case Binarize:
     			previewImage.setImage(_docImage.GenerateBinary());
-    			_state = State.ViewLines;
-    			break;
-    		case ViewLines:
-    			if (_lineIndex == 0) {
-    				_lineImages = _docImage.GenerateLineImages();
-    			}
-    			if(_lineIndex == _lineImages.size()) {
-    				_state = State.ReadCharacters;
-    			} else {
-    				previewImage.setImage(_lineImages.get(_lineIndex));
-    			}
-    			_lineIndex++;
+    			_state = State.ReadCharacters;
     			break;
     		case ReadCharacters:
-    			_docImage.GenerateCharacterImages();
-    			_state = State.Complete;
+    			previewImage.setImage(_docImage.CharacterImages.get(_charIndex++));
+    			if(_charIndex == _docImage.CharacterImages.size() - 1) _state = State.Complete;
     			break;
     		case Complete:
     			break;
@@ -67,7 +55,6 @@ public class MainController {
     private enum State {
     	GreyScale,
     	Binarize,
-    	ViewLines,
     	ReadCharacters,
     	Complete;
     };

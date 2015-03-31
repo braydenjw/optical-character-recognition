@@ -2,11 +2,11 @@ package ca.willenborg.annocr;
 
 import java.awt.Point;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import javafx.scene.image.Image;
@@ -23,11 +23,12 @@ public class DocumentImage {
 	private int MIN_LINE_SPACE_HEIGHT = 2;
 	
 	public Image Image;
-	public boolean[][] BinaryImage;
+	public List<Image> CharacterImages;
 	
 	private Image _greyscaleImage;
-	private boolean[][] _binaryImage;
+	private LabeledBinaryImage _labeledBinaryImage;
 	private List<boolean[][]> lineBinaryImages;
+	private int _width, _height;
 	
 	/********************************************************************************
 	 * Constructors
@@ -36,6 +37,8 @@ public class DocumentImage {
 	public DocumentImage(String imageUrl) 
 	{
 		Image = new Image(imageUrl);
+		_height = (int) Image.getHeight();
+		_width = (int) Image.getWidth();
 	}
 	
 	/********************************************************************************
@@ -50,101 +53,114 @@ public class DocumentImage {
 	
 	public Image GenerateBinary()
 	{
+		CharacterImages = new ArrayList<Image>();
+		
 		if(_greyscaleImage == null) GenerateGreyscale();
-		_binaryImage = GenerateBinary(_greyscaleImage.getPixelReader(), (int)_greyscaleImage.getWidth(), (int)_greyscaleImage.getHeight());
-		TwoPassConnectedComponent(_binaryImage);
-		return Boolean2dToImage(_binaryImage);
+		boolean[] binaryImage = GenerateBinary(_greyscaleImage.getPixelReader(), (int)_greyscaleImage.getWidth(), (int)_greyscaleImage.getHeight());
+		_labeledBinaryImage = new LabeledBinaryImage(binaryImage, _width, _height);
+		TwoPassConnectedComponent(_labeledBinaryImage);
+		Map<Integer, CharacterImage> charBounds = _labeledBinaryImage.FindLabelBounds();
+		for (CharacterImage charImage : charBounds.values()) {
+		    CharacterImages.add(_labeledBinaryImage.GenerateImage(charImage));
+		}
+		return _labeledBinaryImage.GetImage();
 	}
 	
-	public List<Image> GenerateLineImages()
+//	public List<Image> GenerateLineImages()
+//	{
+//		List<Image> imageList = new ArrayList<Image>();
+//		int[] histogram = this.GenerateHistogram(_binaryImage, false);
+//		
+//		lineBinaryImages = GenerateLineSegments(histogram, _binaryImage);
+//		
+//		for(boolean[][] line : lineBinaryImages) {
+//			imageList.add(Boolean2dToImage(line));
+//		}
+//		
+//		return imageList;
+//	}
+//	
+//	public List<CharacterImage> GenerateCharacterImages() {
+//		List<CharacterImage> characterImages = new ArrayList<CharacterImage>();
+//		
+//		int[] histogram = this.GenerateHistogram(lineBinaryImages.get(0), true);
+//		System.out.println(ArrayUtils.toString(histogram));
+//		
+//		return characterImages;
+//	}
+	
+	private static void TwoPassConnectedComponent(LabeledBinaryImage document)
 	{
-		List<Image> imageList = new ArrayList<Image>();
-		int[] histogram = this.GenerateHistogram(_binaryImage, false);
+		List<Pair<Integer, Integer>> equivalenceSet = new ArrayList<Pair<Integer,Integer>>();
+		int currentLabel = 1;
 		
-		lineBinaryImages = GenerateLineSegments(histogram, _binaryImage);
-		
-		for(boolean[][] line : lineBinaryImages) {
-			imageList.add(Boolean2dToImage(line));
+		// First pass
+		for(int y = 0; y < document.GetHeight(); y++) {
+			for(int x = 0; x < document.GetWidth(); x++) {
+				Point point = new Point(x, y);
+				
+				// If the pixel is background, skip
+				if(document.GetPixel(point) == false) continue;
+					
+				// Else, label the pixel with the lowest neighbouring pixel or a new label
+				// If there are 2 neighbours with different values, add them to the equivalence set
+				List<Integer> neighbours = document.GetNeighbouringLabels(point);
+				Set<Integer> equivalenceList = new HashSet<Integer>();
+				
+				if(neighbours.isEmpty()) {
+					document.SetLabel(point, currentLabel++);
+				} else {
+					int min = neighbours.get(0);
+					equivalenceList.add(min);
+					for(int i = 1; i < neighbours.size(); i++) {
+						equivalenceList.add(neighbours.get(i));
+						min = Math.min(min, neighbours.get(i));
+					}
+					document.SetLabel(point, min);					
+					
+					if(point.x == 7 && point.y == 2) {
+						System.out.println("here");
+					}
+					
+					// Add and update all equivalences
+					equivalenceList.remove((Integer) min);
+					for(int equivalence : equivalenceList) {
+						boolean found = false;
+						for(int i = 0; i < equivalenceSet.size(); i++) {
+							if(equivalenceSet.get(i).getKey() == equivalence) {
+								equivalenceSet.set(i, new Pair<Integer, Integer>(equivalence, min));
+								found = true;
+								break;
+							}
+						}
+						if (found == false) {
+							equivalenceSet.add(new Pair<Integer, Integer>(equivalence, min));
+						}
+					}
+				}
+			}
 		}
 		
-		return imageList;
-	}
-	
-	public List<CharacterImage> GenerateCharacterImages() {
-		List<CharacterImage> characterImages = new ArrayList<CharacterImage>();
-		
-		int[] histogram = this.GenerateHistogram(lineBinaryImages.get(0), true);
-		System.out.println(ArrayUtils.toString(histogram));
-		
-		return characterImages;
+		// Second pass
+		for(int y = 0; y < document.GetHeight(); y++) {
+			for(int x = 0; x < document.GetWidth(); x++) {
+				Point point = new Point(x, y);
+				
+				// If the pixel is background, skip
+				if(document.GetPixel(point) == false) continue;
+				
+				for(Pair<Integer, Integer> pair : equivalenceSet) {
+					if(document.GetLabel(point) == pair.getKey()) {
+						document.SetLabel(point, pair.getValue());
+					}
+				}
+			}
+		}
 	}
 	
 	/********************************************************************************
 	 * Helper Methods
 	 ********************************************************************************/
-	
-	private static List<Pair<Point, Point>> TwoPassConnectedComponent(LabeledBinaryImage document) 
-	{
-		List<Pair<Point, Point>> charLocs = new ArrayList<Pair<Point, Point>>();
-		Map<Integer, Label> labels = new HashMap<Integer, Label>(); 
-		Map<Integer, List<Pixel>> patterns = new HashMap<Integer, List<Pixel>>();
-		int highestLabel = 1;
-		
-		// First Pass
-		for(int y = 0; y < document.GetHeight(); y++) {
-			for(int x = 0; x < document.GetWidth(); x++) {
-				
-				Point point = new Point(x, y);
-				
-				// If the current pixel is a foreground pixel
-				if(document.GetPixel(point) == false) continue;
-				
-				// If the current pixel has no labeled neighbours
-				List<Integer> neighbouringLabels = document.GetNeighbouringLabels(point);
-				int newLabel = -1;
-				
-				if(neighbouringLabels.isEmpty() == true) {
-					newLabel = highestLabel;
-					labels.put(newLabel, new Label(newLabel));
-				} else {
-					for(int label : neighbouringLabels) {
-						label = labels.get(label).FindRoot().GetName();
-						newLabel = (label < newLabel) || (newLabel == -1) ? label : newLabel;
-					}
-					Label root = labels.get(newLabel).FindRoot();
-					
-					for(int neighbour : neighbouringLabels) {
-						if (root.GetName() != labels.get(neighbour).FindRoot().GetName()) {
-							labels.get(neighbour).Join(labels.get(newLabel));
-						}
-					}
-				}
-					
-				document.SetLabel(point, newLabel);
-			}
-		}
-		
-		// Second Pass
-		for (int y = 0; y < document.GetHeight(); y++) {
-            for (int x = 0; x < document.GetWidth(); x++) {
-            	Point point = new Point(x, y);
-                int patternNumber = document.GetLabel(point);
-
-                if (patternNumber != 0)
-                {
-                    patternNumber = labels.get(patternNumber).FindRoot().GetName();
-
-                    if (!patterns.containsKey(patternNumber)) {
-                    	patterns.put(patternNumber, new ArrayList<Pixel>());
-                    }
-
-                    patterns.get(patternNumber).add(new Pixel(new Point(x, y), true));
-                }
-            }
-        }
-		
-		return charLocs;
-	}
 	
 	private static Image GenerateGreyscale(PixelReader colourPixelReader, int width, int height) 
 	{
@@ -162,42 +178,22 @@ public class DocumentImage {
 		return greyscaleImage;
 	}
 	
-	private static boolean[][] GenerateBinary(PixelReader greyscalePixelReader, int width, int height) 
+	private static boolean[] GenerateBinary(PixelReader greyscalePixelReader, int width, int height) 
 	{
-		boolean[][] binary = new boolean[height][width];
+		boolean[] binary = new boolean[height * width];
 		
 		for (int x = 0; x < width; x++) {
 			for (int y = 0; y < height; y++) {
 				double brightness = greyscalePixelReader.getColor(x, y).getBrightness();
 				if (brightness < BRIGHTNESS_THRESHOLD) {
-					binary[y][x] = true;
+					binary[y * width + x] = true;
 				} else {
-					binary[y][x] = false;
+					binary[y * width + x] = false;
 				}
 			}
 		}
 		
 		return binary;
-	}
-	
-	private Image Boolean2dToImage(boolean[][] line)
-	{
-		int width = line[0].length;
-		int height = line.length;
-		WritableImage writImage = new WritableImage(width, height);
-		PixelWriter pixelWriter = writImage.getPixelWriter();
-		
-		for(int y = 0; y < height; y++) {
-			for(int x = 0; x < width; x++) {
-				if(line[y][x] == true) {
-					pixelWriter.setColor(x, y, Color.BLACK);
-				} else {
-					pixelWriter.setColor(x, y, Color.WHITE);
-				}
-			}
-		}
-		
-		return (Image) writImage;
 	}
 	
 	
@@ -352,7 +348,7 @@ public class DocumentImage {
 						characterLocations.add(new Pair<Integer, Integer>(firstNonZero, i - firstNonZero));	
 					}
 				} else if (histogram[i] == 0) {
-					characterLocations.add(new Pair<Integer, Integer>(firstNonZero, i - firstNonZero);						
+					characterLocations.add(new Pair<Integer, Integer>(firstNonZero, i - firstNonZero));						
 					firstNonZero = -1;
 				}
 			}	
