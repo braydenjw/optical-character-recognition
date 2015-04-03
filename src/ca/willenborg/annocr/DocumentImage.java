@@ -166,45 +166,6 @@ public class DocumentImage {
 		}
 	}
 	
-	/**
-	 * Called to downsample the image and store it in the down sample component.
-	 */
-	public boolean[] DownSample(CharacterBounds characterBounds, final int dsWidth, final int dsHeight)
-	{
-		boolean[] downSample = new boolean[dsWidth * dsHeight];
-		int top = 0, left = 0, bottom = 0, right = 0;
-		int xRegionSize = characterBounds.GetWidth() / dsWidth;
-		int yRegionSize = characterBounds.GetHeight() / dsHeight;
-		boolean xRegionRemainder = characterBounds.GetWidth() % dsWidth != 0;
-		boolean yRegionRemainder = characterBounds.GetHeight() % dsHeight != 0;
-		
-		for(int y = 0; y < dsHeight; y++) {
-			bottom = (y == dsHeight - 1) && (yRegionRemainder == true) ? top + yRegionSize : top + yRegionSize - 1;
-			for(int x = 0; x < dsWidth; x++) {
-				right = (x == dsWidth - 1) && (xRegionRemainder == true) ? left + xRegionSize : left + xRegionSize - 1;
-				downSample[y * dsWidth + x] = DownSampleHelper(top, left, bottom, right);
-				left = right + 1;
-			}
-			left = right = 0;
-			top = bottom + 1;
-		}
-		
-		return downSample;
-	}
-
-	private boolean DownSampleHelper(int top, int left, int bottom, int right)
-	{
-		for(int y = top; y <= bottom; y++) {
-			for(int x = left; x <= right; x++) {
-				if(_labeledBinaryImage.GetPixel(new Point(x, y)) == true) {
-					return true;
-				}
-			}
-		}
-		
-		return false;
-	}
-	
 	/********************************************************************************
 	 * Helper Methods
 	 ********************************************************************************/

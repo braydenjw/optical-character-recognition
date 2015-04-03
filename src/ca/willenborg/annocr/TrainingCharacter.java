@@ -1,5 +1,7 @@
 package ca.willenborg.annocr;
 
+import org.encog.examples.neural.gui.ocr.SampleData;
+
 public class TrainingCharacter implements Comparable<TrainingCharacter>, Cloneable{
 
 	private boolean[] _binaryImage;
@@ -14,6 +16,14 @@ public class TrainingCharacter implements Comparable<TrainingCharacter>, Cloneab
 	public TrainingCharacter(final char character, final int width, final int height) 
 	{
 		_binaryImage = new boolean[width * height];
+		_width = width;
+		_height = height;
+		_character = character;
+	}
+	
+	public TrainingCharacter(final char character, boolean[] image, final int width, final int height) 
+	{
+		_binaryImage = image;
 		_width = width;
 		_height = height;
 		_character = character;
@@ -73,8 +83,12 @@ public class TrainingCharacter implements Comparable<TrainingCharacter>, Cloneab
 	@Override
 	public int compareTo(TrainingCharacter o)
 	{
-		// TODO Auto-generated method stub
-		return 0;
+		final TrainingCharacter obj = o;
+		if (_character > obj.GetCharacter()) {
+			return 1;
+		} else {
+			return -1;
+		}
 	}
 	
 	@Override

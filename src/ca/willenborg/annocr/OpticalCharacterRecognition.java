@@ -1,5 +1,6 @@
 package ca.willenborg.annocr;
 
+import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,30 +35,27 @@ public class OpticalCharacterRecognition {
 	 * Control Methods
 	 ********************************************************************************/
 	
-//	@SuppressWarnings("unchecked")
-//	public void Add(char character, boolean[] characterImage) 
-//	{
-//		// must downsmaple the image here
-//		this.entry.downSample();
-//		
-//		final TrainingCharacter trainingCharacter = (SampleData) this.sample.getData().clone();
-//		trainingCharacter.SetCharacter(character);
-//
-//		for (int i = 0; i < _trainingCharacters.size(); i++) {
-//			final Comparable<TrainingCharacter> compare = (Comparable<TrainingCharacter>) _trainingCharacters.get(i);
-//			if (compare.equals(character)) {
-//				System.out.println("This character has alread been assigned.");
-//				return;
-//			}
-//
-//			if (compare.compareTo(trainingCharacter) > 0) {
-//				_trainingCharacters.add(i, trainingCharacter);
-//				return;
-//			}
-//		}
-//		
-//		_trainingCharacters.add(trainingCharacter);
-//	}
+	public void Add(char character, boolean[] characterImage, int width) 
+	{
+		boolean downSample[] = DownSample(characterImage, width);
+		
+		final TrainingCharacter trainingCharacter = new TrainingCharacter(character, downSample, DOWNSAMPLE_WIDTH, DOWNSAMPLE_HEIGHT);
+
+		for (int i = 0; i < _trainingCharacters.size(); i++) {
+			final Comparable<TrainingCharacter> compare = (Comparable<TrainingCharacter>) _trainingCharacters.get(i);
+			if (compare.equals(character)) {
+				System.out.println("This character has alread been assigned.");
+				return;
+			}
+
+			if (compare.compareTo(trainingCharacter) > 0) {
+				_trainingCharacters.add(i, trainingCharacter);
+				return;
+			}
+		}
+		
+		_trainingCharacters.add(trainingCharacter);
+	}
 	
 	/**
 	 * Desc:	Trains the neural network will all the training characters in @_trainingCharacters
@@ -95,6 +93,52 @@ public class OpticalCharacterRecognition {
 		} catch (final Exception e) {
 			System.out.println("Error during training.");
 		}
+	}
+	
+	/********************************************************************************
+	 * Helper Methods
+	 ********************************************************************************/
+	
+	public static boolean[] DownSample(boolean image[], final int width)
+	{
+		return DownSample(image, width, DOWNSAMPLE_WIDTH, DOWNSAMPLE_HEIGHT);
+	}
+	
+	public static boolean[] DownSample(boolean[] image, final int width, final int dsWidth, final int dsHeight)
+	{
+		boolean[] downSample = new boolean[dsWidth * dsHeight];
+		int height = image.length / width;
+		int top = 0, left = 0, bottom = 0, right = 0;
+		int xRegionSize = width / dsWidth;
+		int yRegionSize = height / dsHeight;
+		boolean xRegionRemainder = width % dsWidth != 0;
+		boolean yRegionRemainder = height % dsHeight != 0;
+		
+		for(int y = 0; y < dsHeight; y++) {
+			bottom = (y == dsHeight - 1) && (yRegionRemainder == true) ? top + yRegionSize : top + yRegionSize - 1;
+			for(int x = 0; x < dsWidth; x++) {
+				right = (x == dsWidth - 1) && (xRegionRemainder == true) ? left + xRegionSize : left + xRegionSize - 1;
+				downSample[y * dsWidth + x] = DownSampleHelper(image, width, top, left, bottom, right);
+				left = right + 1;
+			}
+			left = right = 0;
+			top = bottom + 1;
+		}
+		
+		return downSample;
+	}
+
+	private static boolean DownSampleHelper(boolean[] image, int width, int top, int left, int bottom, int right)
+	{
+		for(int y = top; y <= bottom; y++) {
+			for(int x = left; x <= right; x++) {
+				if(image[y * width + x] == true) {
+					return true;
+				}
+			}
+		}
+		
+		return false;
 	}
 	
 }
