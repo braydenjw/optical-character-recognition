@@ -1,6 +1,7 @@
 package ca.willenborg.annocr;
 
 import java.awt.Point;
+import java.awt.image.PixelGrabber;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.encog.examples.neural.gui.ocr.SampleData;
 
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
@@ -156,6 +158,68 @@ public class DocumentImage {
 				}
 			}
 		}
+	}
+	
+	/**
+	 * Called to downsample the image and store it in the down sample component.
+	 */
+	public void DownSample(CharacterBounds characterBounds, final int dsWidth, final int dsHeight)
+	{
+		final PixelGrabber grabber = new PixelGrabber(this.entryImage, 0, 0, w, h, true);
+		try {
+			grabber.grabPixels();
+			this.pixelMap = (int[]) grabber.getPixels();
+			findBounds(w, h);
+
+			// now downsample
+			final TrainingCharacter trainingCharacter = this.sample.getData();
+
+			double ratioX = (double) characterBounds.GetWidth() / (double) dsWidth;
+			double ratioY = (double) characterBounds.GetHeight() / (double) dsHeight;
+
+			for (int y = 0; y < dsHeight; y++) {
+				for (int x = 0; x < dsWidth; x++) {
+					if (downSampleRegion(x, y)) {
+						trainingCharacter.SetData(x, y, true);
+					} else {
+						trainingCharacter.SetData(x, y, false);
+					}
+				}
+			}
+
+			this.sample.repaint();
+			repaint();
+		} catch (final InterruptedException e) {
+		}
+	}
+
+	/**
+	 * Called to downsample a quadrant of the image.
+	 * 
+	 * @param x
+	 *            The x coordinate of the resulting downsample.
+	 * @param y
+	 *            The y coordinate of the resulting downsample.
+	 * @return Returns true if there were ANY pixels in the specified quadrant.
+	 */
+	protected boolean downSampleRegion(final int x, final int y) {
+		final int w = this.entryImage.getWidth(this);
+		final int startX = (int) (this.downSampleLeft + (x * this.ratioX));
+		final int startY = (int) (this.downSampleTop + (y * this.ratioY));
+		final int endX = (int) (startX + this.ratioX);
+		final int endY = (int) (startY + this.ratioY);
+
+		for (int yy = startY; yy <= endY; yy++) {
+			for (int xx = startX; xx <= endX; xx++) {
+				final int loc = xx + (yy * w);
+
+				if (this.pixelMap[loc] != -1) {
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 	
 	/********************************************************************************

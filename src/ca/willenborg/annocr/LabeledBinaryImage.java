@@ -52,9 +52,9 @@ public class LabeledBinaryImage extends Object {
 	/************************************************************
 	 * Control Methods
 	*************************************************************/
-	public Map<Integer, CharacterImage> FindLabelBounds()
+	public Map<Integer, CharacterBounds> FindLabelBounds()
 	{
-		Map<Integer, CharacterImage> labelBounds = new HashMap<Integer, CharacterImage>();
+		Map<Integer, CharacterBounds> labelBounds = new HashMap<Integer, CharacterBounds>();
 		
 		for(int y = 0; y < this.GetHeight(); y++) 
 		{
@@ -63,7 +63,7 @@ public class LabeledBinaryImage extends Object {
 				Point point = new Point(x, y);
 				int currentLabel = this.GetLabel(point);
 				if(currentLabel == 0) continue;
-				CharacterImage character = labelBounds.get(currentLabel);
+				CharacterBounds character = labelBounds.get(currentLabel);
 				if(character != null) {
 					character.SetTop(Math.min(character.GetTop(), point.y));
 					character.SetLeft(Math.min(character.GetLeft(), point.x));
@@ -71,7 +71,7 @@ public class LabeledBinaryImage extends Object {
 					character.SetRight(Math.max(character.GetRight(), point.x));
 					labelBounds.put(currentLabel, character);
 				} else {
-					labelBounds.put(currentLabel, new CharacterImage(point.y, point.x, point.y, point.x));
+					labelBounds.put(currentLabel, new CharacterBounds(point.y, point.x, point.y, point.x));
 				}
 			}
 		}
@@ -79,7 +79,7 @@ public class LabeledBinaryImage extends Object {
 		return labelBounds;
 	}
 	
-	public Image GenerateImage(CharacterImage charImage)
+	public Image GenerateImage(CharacterBounds charImage)
 	{
 		WritableImage writImage = new WritableImage(charImage.GetRight() - charImage.GetLeft() + 1, charImage.GetBottom() - charImage.GetTop() + 1);
 		PixelWriter pixelWriter = writImage.getPixelWriter();

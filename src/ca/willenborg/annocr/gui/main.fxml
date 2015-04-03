@@ -8,18 +8,11 @@
 
 <Pane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ca.willenborg.annocr.gui.controllers.MainController">
    <children>
-      <VBox alignment="TOP_CENTER" prefHeight="400.0" prefWidth="600.0">
+      <VBox>
          <children>
+            <Button fx:id="nextButton" mnemonicParsing="false" onAction="#nextButtonPressed" text="Next Step" textAlignment="CENTER" />
             <ImageView fx:id="previewImage" pickOnBounds="true" preserveRatio="true" />
-            <HBox alignment="BOTTOM_CENTER" prefHeight="25.0" prefWidth="364.0">
-               <children>
-                  <Button fx:id="nextButton" mnemonicParsing="false" onAction="#nextButtonPressed" text="Next Step" textAlignment="CENTER">
-                     <HBox.margin>
-                        <Insets left="5.0" right="5.0" />
-                     </HBox.margin>
-                  </Button>
-               </children>
-            </HBox>
-         </children></VBox>
+         </children>
+      </VBox>
    </children>
 </Pane>
