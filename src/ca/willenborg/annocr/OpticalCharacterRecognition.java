@@ -5,7 +5,6 @@ import java.util.List;
 
 import javax.swing.JOptionPane;
 
-import org.encog.examples.neural.gui.ocr.SampleData;
 import org.encog.ml.data.MLData;
 import org.encog.ml.data.MLDataSet;
 import org.encog.ml.data.basic.BasicMLData;
@@ -35,30 +34,30 @@ public class OpticalCharacterRecognition {
 	 * Control Methods
 	 ********************************************************************************/
 	
-	@SuppressWarnings("unchecked")
-	public void Add(char character, boolean[] characterImage) 
-	{
-		// must downsmaple the image here
-		this.entry.downSample();
-		
-		final TrainingCharacter trainingCharacter = (SampleData) this.sample.getData().clone();
-		trainingCharacter.SetCharacter(character);
-
-		for (int i = 0; i < _trainingCharacters.size(); i++) {
-			final Comparable<TrainingCharacter> compare = (Comparable<TrainingCharacter>) _trainingCharacters.get(i);
-			if (compare.equals(character)) {
-				System.out.println("This character has alread been assigned.");
-				return;
-			}
-
-			if (compare.compareTo(trainingCharacter) > 0) {
-				_trainingCharacters.add(i, trainingCharacter);
-				return;
-			}
-		}
-		
-		_trainingCharacters.add(trainingCharacter);
-	}
+//	@SuppressWarnings("unchecked")
+//	public void Add(char character, boolean[] characterImage) 
+//	{
+//		// must downsmaple the image here
+//		this.entry.downSample();
+//		
+//		final TrainingCharacter trainingCharacter = (SampleData) this.sample.getData().clone();
+//		trainingCharacter.SetCharacter(character);
+//
+//		for (int i = 0; i < _trainingCharacters.size(); i++) {
+//			final Comparable<TrainingCharacter> compare = (Comparable<TrainingCharacter>) _trainingCharacters.get(i);
+//			if (compare.equals(character)) {
+//				System.out.println("This character has alread been assigned.");
+//				return;
+//			}
+//
+//			if (compare.compareTo(trainingCharacter) > 0) {
+//				_trainingCharacters.add(i, trainingCharacter);
+//				return;
+//			}
+//		}
+//		
+//		_trainingCharacters.add(trainingCharacter);
+//	}
 	
 	/**
 	 * Desc:	Trains the neural network will all the training characters in @_trainingCharacters

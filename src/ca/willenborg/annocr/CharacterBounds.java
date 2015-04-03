@@ -21,6 +21,9 @@ public class CharacterBounds
 		_left = left;
 		_bottom = bottom;
 		_right = right;
+		_width = _right - _left + 1;
+		_height = _bottom - _top + 1;
+		
 	}
 	
 	/********************************************************************************
@@ -30,7 +33,7 @@ public class CharacterBounds
 	public void SetLeft(int left)
 	{
 		_left = left;
-		_width = _right - _left;
+		_width = _right - _left + 1;
 	}
 	
 	public int GetLeft()
@@ -41,7 +44,7 @@ public class CharacterBounds
 	public void SetTop(int top)
 	{
 		_top = top;
-		_height = _bottom - _top;
+		_height = _bottom - _top + 1;
 	}
 	
 	public int GetTop()
@@ -52,7 +55,7 @@ public class CharacterBounds
 	public void SetRight(int right)
 	{
 		_right = right;
-		_width = _right - _left;
+		_width = _right - _left + 1;
 	}
 	
 	public int GetRight()
@@ -63,7 +66,7 @@ public class CharacterBounds
 	public void SetBottom(int bottom)
 	{
 		_bottom = bottom;
-		_height = _bottom - _top;
+		_height = _bottom - _top + 1;
 	}
 	
 	public int GetBottom()

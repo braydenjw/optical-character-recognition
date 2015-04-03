@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.encog.examples.neural.gui.ocr.SampleData;
 
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
@@ -36,6 +35,13 @@ public class DocumentImage {
 	 * Constructors
 	 ********************************************************************************/
 	
+	public DocumentImage(LabeledBinaryImage lbi, final int width, final int height) 
+	{
+		_labeledBinaryImage = lbi;
+		_width = width;
+		_height = height;
+	}
+	
 	public DocumentImage(String imageUrl) 
 	{
 		Image = new Image(imageUrl);
@@ -61,8 +67,8 @@ public class DocumentImage {
 		boolean[] binaryImage = GenerateBinary(_greyscaleImage.getPixelReader(), (int)_greyscaleImage.getWidth(), (int)_greyscaleImage.getHeight());
 		_labeledBinaryImage = new LabeledBinaryImage(binaryImage, _width, _height);
 		TwoPassConnectedComponent(_labeledBinaryImage);
-		Map<Integer, CharacterImage> charBounds = _labeledBinaryImage.FindLabelBounds();
-		for (CharacterImage charImage : charBounds.values()) {
+		Map<Integer, CharacterBounds> charBounds = _labeledBinaryImage.FindLabelBounds();
+		for (CharacterBounds charImage : charBounds.values()) {
 		    CharacterImages.add(_labeledBinaryImage.GenerateImage(charImage));
 		}
 		return _labeledBinaryImage.GetImage();
@@ -163,62 +169,39 @@ public class DocumentImage {
 	/**
 	 * Called to downsample the image and store it in the down sample component.
 	 */
-	public void DownSample(CharacterBounds characterBounds, final int dsWidth, final int dsHeight)
+	public boolean[] DownSample(CharacterBounds characterBounds, final int dsWidth, final int dsHeight)
 	{
-		final PixelGrabber grabber = new PixelGrabber(this.entryImage, 0, 0, w, h, true);
-		try {
-			grabber.grabPixels();
-			this.pixelMap = (int[]) grabber.getPixels();
-			findBounds(w, h);
-
-			// now downsample
-			final TrainingCharacter trainingCharacter = this.sample.getData();
-
-			double ratioX = (double) characterBounds.GetWidth() / (double) dsWidth;
-			double ratioY = (double) characterBounds.GetHeight() / (double) dsHeight;
-
-			for (int y = 0; y < dsHeight; y++) {
-				for (int x = 0; x < dsWidth; x++) {
-					if (downSampleRegion(x, y)) {
-						trainingCharacter.SetData(x, y, true);
-					} else {
-						trainingCharacter.SetData(x, y, false);
-					}
-				}
+		boolean[] downSample = new boolean[dsWidth * dsHeight];
+		int top = 0, left = 0, bottom = 0, right = 0;
+		int xRegionSize = characterBounds.GetWidth() / dsWidth;
+		int yRegionSize = characterBounds.GetHeight() / dsHeight;
+		boolean xRegionRemainder = characterBounds.GetWidth() % dsWidth != 0;
+		boolean yRegionRemainder = characterBounds.GetHeight() % dsHeight != 0;
+		
+		for(int y = 0; y < dsHeight; y++) {
+			bottom = (y == dsHeight - 1) && (yRegionRemainder == true) ? top + yRegionSize : top + yRegionSize - 1;
+			for(int x = 0; x < dsWidth; x++) {
+				right = (x == dsWidth - 1) && (xRegionRemainder == true) ? left + xRegionSize : left + xRegionSize - 1;
+				downSample[y * dsWidth + x] = DownSampleHelper(top, left, bottom, right);
+				left = right + 1;
 			}
-
-			this.sample.repaint();
-			repaint();
-		} catch (final InterruptedException e) {
+			left = right = 0;
+			top = bottom + 1;
 		}
+		
+		return downSample;
 	}
 
-	/**
-	 * Called to downsample a quadrant of the image.
-	 * 
-	 * @param x
-	 *            The x coordinate of the resulting downsample.
-	 * @param y
-	 *            The y coordinate of the resulting downsample.
-	 * @return Returns true if there were ANY pixels in the specified quadrant.
-	 */
-	protected boolean downSampleRegion(final int x, final int y) {
-		final int w = this.entryImage.getWidth(this);
-		final int startX = (int) (this.downSampleLeft + (x * this.ratioX));
-		final int startY = (int) (this.downSampleTop + (y * this.ratioY));
-		final int endX = (int) (startX + this.ratioX);
-		final int endY = (int) (startY + this.ratioY);
-
-		for (int yy = startY; yy <= endY; yy++) {
-			for (int xx = startX; xx <= endX; xx++) {
-				final int loc = xx + (yy * w);
-
-				if (this.pixelMap[loc] != -1) {
+	private boolean DownSampleHelper(int top, int left, int bottom, int right)
+	{
+		for(int y = top; y <= bottom; y++) {
+			for(int x = left; x <= right; x++) {
+				if(_labeledBinaryImage.GetPixel(new Point(x, y)) == true) {
 					return true;
 				}
 			}
 		}
-
+		
 		return false;
 	}
 	
