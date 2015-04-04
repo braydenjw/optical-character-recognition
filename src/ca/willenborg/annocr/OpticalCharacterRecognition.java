@@ -4,8 +4,6 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.JOptionPane;
-
 import org.encog.ml.data.MLData;
 import org.encog.ml.data.MLDataSet;
 import org.encog.ml.data.basic.BasicMLData;
@@ -43,7 +41,7 @@ public class OpticalCharacterRecognition {
 
 		for (int i = 0; i < _trainingCharacters.size(); i++) {
 			final Comparable<TrainingCharacter> compare = (Comparable<TrainingCharacter>) _trainingCharacters.get(i);
-			if (compare.equals(character)) {
+			if (_trainingCharacters.get(i).GetCharacter() == character) {
 				System.out.println("This character has alread been assigned.");
 				return;
 			}
@@ -74,9 +72,9 @@ public class OpticalCharacterRecognition {
 				final MLData item = new BasicMLData(input);
 				int index = 0;
 				final TrainingCharacter currentCharacter = _trainingCharacters.get(i);
-				for (int y = 0; y < currentCharacter.GetHeight(); y++) {
-					for (int x = 0; x < currentCharacter.GetWidth(); x++) {
-						item.setData(index++, currentCharacter.GetData(x, y) ? 0.5 : -0.5);
+				for (Point point = new Point(0, 0); point.y < currentCharacter.GetHeight(); point.y++) {
+					for (; point.x < currentCharacter.GetWidth(); point.x++) {
+						item.setData(index++, currentCharacter.GetData(point) ? 0.5 : -0.5);
 					}
 				}
 
@@ -93,6 +91,30 @@ public class OpticalCharacterRecognition {
 		} catch (final Exception e) {
 			System.out.println("Error during training.");
 		}
+	}
+	
+	public char Recognize(boolean[] image, int width)
+	{
+		if (_neuralNetwork == null) {
+			System.out.println("I need to be trained first!");
+			return '?';
+		}
+		
+		DownSample(image, width);
+
+		final MLData input = new BasicMLData(DOWNSAMPLE_WIDTH * DOWNSAMPLE_HEIGHT);
+		int index = 0;
+		
+		final TrainingCharacter trainingCharacter = new TrainingCharacter('?', image, width, image.length / width);
+		for (Point point = new Point(0, 0); point.y < trainingCharacter.GetHeight(); point.y++) {
+			for (; point.x < trainingCharacter.GetWidth(); point.x++) {
+				input.setData(index++, trainingCharacter.GetData(point) ? 0.5 : -0.5);
+			}
+		}
+
+		final int best = _neuralNetwork.classify(input);
+		final char map[] = MapNeurons();
+		return map[best];
 	}
 	
 	/********************************************************************************
@@ -139,6 +161,40 @@ public class OpticalCharacterRecognition {
 		}
 		
 		return false;
+	}
+	
+	private char[] MapNeurons() 
+	{
+		final char map[] = new char[_trainingCharacters.size()];
+
+		for (int i = 0; i < map.length; i++) {
+			map[i] = '?';
+		}
+		
+		for (int i = 0; i < _trainingCharacters.size(); i++) {
+			final MLData input = new BasicMLData(5 * 7);
+			int index = 0;
+			final TrainingCharacter trainingCharacter = _trainingCharacters.get(i);
+			for (Point point = new Point(0, 0); point.y < trainingCharacter.GetHeight(); point.y++) {
+				for (; point.x < trainingCharacter.GetWidth(); point.x++) {
+					input.setData(index++, trainingCharacter.GetData(point) ? .5 : -.5);
+				}
+			}
+
+			final int best = _neuralNetwork.classify(input);
+			map[best] = trainingCharacter.GetCharacter();
+		}
+		
+		return map;
+	}
+	
+	/********************************************************************************
+	 * Getters and Setters
+	 ********************************************************************************/
+	
+	public List<TrainingCharacter> GetTrainingCharacters()
+	{
+		return _trainingCharacters;
 	}
 	
 }

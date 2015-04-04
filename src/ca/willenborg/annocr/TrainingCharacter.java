@@ -1,6 +1,6 @@
 package ca.willenborg.annocr;
 
-import org.encog.examples.neural.gui.ocr.SampleData;
+import java.awt.Point;
 
 public class TrainingCharacter implements Comparable<TrainingCharacter>, Cloneable{
 
@@ -46,14 +46,14 @@ public class TrainingCharacter implements Comparable<TrainingCharacter>, Cloneab
 	 * Getters and Setter
 	 ********************************************************************************/
 
-	public boolean GetData(final int x, final int y)
+	public boolean GetData(final Point point)
 	{
-		return _binaryImage[y * _width + x];
+		return _binaryImage[point.y * _width + point.x];
 	}
 	
-	public void SetData(final int x, final int y, final boolean value)
+	public void SetData(final Point point, final boolean value)
 	{
-		_binaryImage[y * _width + x] = value;
+		_binaryImage[point.y * _width + point.x] = value;
 	}
 	
 	public char GetCharacter() 
@@ -92,13 +92,26 @@ public class TrainingCharacter implements Comparable<TrainingCharacter>, Cloneab
 	}
 	
 	@Override
+	public boolean equals(Object o)
+	{
+		if(!(o instanceof TrainingCharacter)) return false;
+		
+		final TrainingCharacter obj = (TrainingCharacter) o;
+		if (_character == obj.GetCharacter()) {
+			return true;
+		}
+		
+		return false;
+	}
+	
+	@Override
 	public Object clone()
 	{
 		final TrainingCharacter obj = new TrainingCharacter(_character, GetWidth(), GetHeight());
 		
-		for (int y = 0; y < GetHeight(); y++) {
-			for (int x = 0; x < GetWidth(); x++) {
-				obj.SetData(x, y, GetData(x, y));
+		for (Point point = new Point(0, 0); point.y < GetHeight(); point.y++) {
+			for (; point.x < GetWidth(); point.x++) {
+				obj.SetData(point, GetData(point));
 			}
 		}
 		
