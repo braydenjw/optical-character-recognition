@@ -110,7 +110,7 @@ public class TrainingCharacter implements Comparable<TrainingCharacter>, Cloneab
 		final TrainingCharacter obj = new TrainingCharacter(_character, GetWidth(), GetHeight());
 		
 		for (Point point = new Point(0, 0); point.y < GetHeight(); point.y++) {
-			for (; point.x < GetWidth(); point.x++) {
+			for (point.x = 0; point.x < GetWidth(); point.x++) {
 				obj.SetData(point, GetData(point));
 			}
 		}

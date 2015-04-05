@@ -73,7 +73,7 @@ public class OpticalCharacterRecognition {
 				int index = 0;
 				final TrainingCharacter currentCharacter = _trainingCharacters.get(i);
 				for (Point point = new Point(0, 0); point.y < currentCharacter.GetHeight(); point.y++) {
-					for (; point.x < currentCharacter.GetWidth(); point.x++) {
+					for (point.x = 0; point.x < currentCharacter.GetWidth(); point.x++) {
 						item.setData(index++, currentCharacter.GetData(point) ? 0.5 : -0.5);
 					}
 				}
@@ -100,14 +100,13 @@ public class OpticalCharacterRecognition {
 			return '?';
 		}
 		
-		DownSample(image, width);
-
+		image = DownSample(image, width);
 		final MLData input = new BasicMLData(DOWNSAMPLE_WIDTH * DOWNSAMPLE_HEIGHT);
 		int index = 0;
 		
-		final TrainingCharacter trainingCharacter = new TrainingCharacter('?', image, width, image.length / width);
+		final TrainingCharacter trainingCharacter = new TrainingCharacter('?', image, DOWNSAMPLE_WIDTH, DOWNSAMPLE_HEIGHT);
 		for (Point point = new Point(0, 0); point.y < trainingCharacter.GetHeight(); point.y++) {
-			for (; point.x < trainingCharacter.GetWidth(); point.x++) {
+			for (point.x = 0; point.x < trainingCharacter.GetWidth(); point.x++) {
 				input.setData(index++, trainingCharacter.GetData(point) ? 0.5 : -0.5);
 			}
 		}
@@ -176,7 +175,7 @@ public class OpticalCharacterRecognition {
 			int index = 0;
 			final TrainingCharacter trainingCharacter = _trainingCharacters.get(i);
 			for (Point point = new Point(0, 0); point.y < trainingCharacter.GetHeight(); point.y++) {
-				for (; point.x < trainingCharacter.GetWidth(); point.x++) {
+				for (point.x = 0; point.x < trainingCharacter.GetWidth(); point.x++) {
 					input.setData(index++, trainingCharacter.GetData(point) ? .5 : -.5);
 				}
 			}

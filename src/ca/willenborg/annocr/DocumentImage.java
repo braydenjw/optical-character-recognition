@@ -1,7 +1,6 @@
 package ca.willenborg.annocr;
 
 import java.awt.Point;
-import java.awt.image.PixelGrabber;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
