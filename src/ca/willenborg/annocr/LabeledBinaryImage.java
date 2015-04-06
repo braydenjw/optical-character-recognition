@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.Pair;
+
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
@@ -79,22 +81,41 @@ public class LabeledBinaryImage extends Object {
 		return labelBounds;
 	}
 	
-	public Image GenerateImage(CharacterBounds charImage)
+	public Image GenerateImage(CharacterBounds charBounds)
 	{
-		WritableImage writImage = new WritableImage(charImage.GetRight() - charImage.GetLeft() + 1, charImage.GetBottom() - charImage.GetTop() + 1);
+		WritableImage writImage = new WritableImage(charBounds.GetRight() - charBounds.GetLeft() + 1, charBounds.GetBottom() - charBounds.GetTop() + 1);
 		PixelWriter pixelWriter = writImage.getPixelWriter();
 		
-		for(int y = charImage.GetTop(); y <= charImage.GetBottom(); y++) {
-			for(int x = charImage.GetLeft(); x <= charImage.GetRight(); x++) {
+		for(int y = charBounds.GetTop(); y <= charBounds.GetBottom(); y++) {
+			for(int x = charBounds.GetLeft(); x <= charBounds.GetRight(); x++) {
 				if(this.GetPixel(new Point(x, y)) == true) {
-					pixelWriter.setColor(x - charImage.GetLeft(), y - charImage.GetTop(), Color.BLACK);
+					pixelWriter.setColor(x - charBounds.GetLeft(), y - charBounds.GetTop(), Color.BLACK);
 				} else {
-					pixelWriter.setColor(x - charImage.GetLeft(), y - charImage.GetTop(), Color.WHITE);
+					pixelWriter.setColor(x - charBounds.GetLeft(), y - charBounds.GetTop(), Color.WHITE);
 				}
 			}
 		}
 		
 		return (Image) writImage;
+	}
+	
+	public Pair<Boolean[], Integer> GenerateBinaryImage(CharacterBounds charBounds)
+	{
+		int width = charBounds.GetRight() - charBounds.GetLeft() + 1;
+		int height = charBounds.GetBottom() - charBounds.GetTop() + 1;
+		Boolean[] image = new Boolean[height * width];
+		
+		Point point = new Point(0, 0);
+		for(int y = charBounds.GetTop(); y <= charBounds.GetBottom(); y++) {
+			for(int x = charBounds.GetLeft(); x <= charBounds.GetRight(); x++) {
+				image[point.y * width + point.x] = this.GetPixel(new Point(x, y));
+				point.x++;
+			}
+			point.x = 0;
+			point.y++;
+		}
+		
+		return new Pair<Boolean[], Integer>(image, width);
 	}
 	
 	/************************************************************

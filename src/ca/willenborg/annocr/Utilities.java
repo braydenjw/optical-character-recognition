@@ -26,4 +26,15 @@ public class Utilities {
 		}
 	}
 	
+	public static boolean[] BooleanObjectArrayToPrimitive(Boolean[] original)
+	{
+		boolean[] primitiveArray = new boolean[original.length];
+		
+		for(int i = 0; i < original.length; i++) {
+			primitiveArray[i] = original[i].booleanValue();
+		}
+		
+		return primitiveArray;
+	}
+	
 }

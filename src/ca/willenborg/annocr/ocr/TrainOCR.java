@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 
 import org.apache.commons.lang3.Pair;
 
+import ca.willenborg.annocr.Utilities;
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
 import javafx.scene.paint.Color;
@@ -30,10 +31,10 @@ public class TrainOCR
 				
 				if(child.getName().length() == 6) {
 					character = Character.toUpperCase(child.getName().charAt(1));
-					ocr.Add(character, BooleanObjectArrayToPrimitive(image.right), (int) image.left);
+					ocr.Add(character, Utilities.BooleanObjectArrayToPrimitive(image.right), (int) image.left);
 				} else if (child.getName().length() == 5) {
 					character = Character.toLowerCase(child.getName().charAt(0));
-					ocr.Add(character, BooleanObjectArrayToPrimitive(image.right), (int) image.left);
+					ocr.Add(character, Utilities.BooleanObjectArrayToPrimitive(image.right), (int) image.left);
 				}
 				
 				System.out.println("Character: " + character + " was added to the neural network training queue.");
@@ -41,6 +42,8 @@ public class TrainOCR
 		} else {
 			System.out.println("Training directory not found.");
 		}
+		
+		ocr.TrainNeuralNetwork();
 		
 		return ocr;
 	}
@@ -67,17 +70,6 @@ public class TrainOCR
 			return null;
 		}
 		
-	}
-	
-	public static boolean[] BooleanObjectArrayToPrimitive(Boolean[] original)
-	{
-		boolean[] primitiveArray = new boolean[original.length];
-		
-		for(int i = 0; i < original.length; i++) {
-			primitiveArray[i] = original[i].booleanValue();
-		}
-		
-		return primitiveArray;
 	}
 
 }

@@ -53,7 +53,7 @@ public class TrainOCRTest {
 		while (entries.hasNext()) {
 		    Map.Entry<Integer, Pair<Integer, Boolean[]>> entry = entries.next();
 		    char character = (char)((int) entry.getKey());
-		    if(character == ocr.Recognize(TrainOCR.BooleanObjectArrayToPrimitive(entry.getValue().right), entry.getValue().left)) {
+		    if(character == ocr.Recognize(Utilities.BooleanObjectArrayToPrimitive(entry.getValue().right), entry.getValue().left)) {
 		    	correct++;
 		    } else {
 		    	incorrect++;
