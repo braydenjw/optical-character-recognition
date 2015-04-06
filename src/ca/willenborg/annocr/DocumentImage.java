@@ -22,17 +22,15 @@ import javafx.scene.paint.Color;
 public class DocumentImage {
 	
 	private static final double BRIGHTNESS_THRESHOLD = 0.7;
-	private int MIN_LINE_HEIGHT = 5;
-	private int MIN_LINE_SPACE_HEIGHT = 2;
-	
+
 	public Image Image;
 	public List<Image> CharacterImages;
 	public List<Pair<Boolean[], Integer>> BinaryCharacterImages;
 	
 	private Image _greyscaleImage;
 	private LabeledBinaryImage _labeledBinaryImage;
-	private List<boolean[][]> lineBinaryImages;
 	private int _width, _height;
+	private OCRController _ocrController;
 	
 	/********************************************************************************
 	 * Constructors
@@ -40,6 +38,7 @@ public class DocumentImage {
 	
 	public DocumentImage(LabeledBinaryImage lbi, final int width, final int height) 
 	{
+		_ocrController = OCRController.getInstance();
 		_labeledBinaryImage = lbi;
 		_width = width;
 		_height = height;
@@ -47,6 +46,7 @@ public class DocumentImage {
 	
 	public DocumentImage(String imageUrl) 
 	{
+		_ocrController = OCRController.getInstance();
 		Image = new Image(imageUrl);
 		_height = (int) Image.getHeight();
 		_width = (int) Image.getWidth();
@@ -64,13 +64,21 @@ public class DocumentImage {
 	
 	public Image GenerateBinary()
 	{
-		int index = 0;
 		CharacterImages = new ArrayList<Image>();
 		BinaryCharacterImages = new ArrayList<Pair<Boolean[], Integer>>();
 		
 		if(_greyscaleImage == null) GenerateGreyscale();
 		boolean[] binaryImage = GenerateBinary(_greyscaleImage.getPixelReader(), (int)_greyscaleImage.getWidth(), (int)_greyscaleImage.getHeight());
 		_labeledBinaryImage = new LabeledBinaryImage(binaryImage, _width, _height);
+		
+		return _labeledBinaryImage.GetImage();
+	}
+	
+	public String ReadDocument()
+	{
+		String documentText = "";
+		int index = 0;
+		
 		TwoPassConnectedComponent(_labeledBinaryImage);
 		Map<Integer, CharacterBounds> charBounds = _labeledBinaryImage.FindLabelBounds();
 		
@@ -83,7 +91,7 @@ public class DocumentImage {
 		        
 		        boolean rightHeight = pair.getValue().GetHeight() >= OpticalCharacterRecognition.DOWNSAMPLE_HEIGHT;
 				boolean rightWidth = pair.getValue().GetWidth() >= OpticalCharacterRecognition.DOWNSAMPLE_WIDTH;
-				if(rightHeight && rightWidth) {
+				if(rightHeight || rightWidth) {
 					if(topMost == null) {
 						topMost = pair;
 					} else {
@@ -102,7 +110,7 @@ public class DocumentImage {
 		        
 		        boolean rightHeight = pair.getValue().GetHeight() >= OpticalCharacterRecognition.DOWNSAMPLE_HEIGHT;
 				boolean rightWidth = pair.getValue().GetWidth() >= OpticalCharacterRecognition.DOWNSAMPLE_WIDTH;
-				if(rightHeight && rightWidth) {
+				if(rightHeight || rightWidth) {
 					if(pair.getValue().GetTop() >= topMost.getValue().GetTop() && pair.getValue().GetTop() <= topMost.getValue().GetBottom()) {
 						line.put(pair.getValue().GetLeft(), pair.getValue());
 						it.remove();
@@ -113,14 +121,23 @@ public class DocumentImage {
 		    }
 		    
 		    //do this
-		    for(CharacterBounds characterBounds : line.values()) {
-		    	CharacterImages.add(index, _labeledBinaryImage.GenerateImage(characterBounds));
-		    	BinaryCharacterImages.add(index, _labeledBinaryImage.GenerateBinaryImage(characterBounds));
+		    int previousCharacterPos = -1;
+		    it = line.entrySet().iterator();
+		    while (it.hasNext()) {
+		        Map.Entry<Integer, CharacterBounds> pair = (Map.Entry<Integer, CharacterBounds>) it.next();
+		        
+		        if((previousCharacterPos != -1) && (pair.getKey() - previousCharacterPos >= 5)) documentText += " ";
+		    	CharacterImages.add(index, _labeledBinaryImage.GenerateImage(pair.getValue()));	    	
+		    	Pair<Boolean[], Integer> charImage = _labeledBinaryImage.GenerateBinaryImage(pair.getValue());
+		    	documentText += _ocrController.Ocr.Recognize(Utilities.BooleanObjectArrayToPrimitive(charImage.left), charImage.right);
+		    	previousCharacterPos = pair.getValue().GetRight();
 		    	index++;
 		    }
+		    
+		    documentText += " ";
 		}
 		
-		return _labeledBinaryImage.GetImage();
+		return documentText;
 	}
 	
 	

@@ -1,17 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.text.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.image.*?>
 <?import java.lang.*?>
 <?import javafx.scene.layout.*?>
 
-<Pane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ca.willenborg.annocr.gui.controllers.MainController">
+<Pane prefHeight="180.0" prefWidth="240.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ca.willenborg.annocr.gui.controllers.MainController">
    <children>
       <VBox>
          <children>
             <Button fx:id="nextButton" mnemonicParsing="false" onAction="#nextButtonPressed" text="Next Step" textAlignment="CENTER" />
             <ImageView fx:id="previewImage" pickOnBounds="true" preserveRatio="true" />
+            <ImageView fx:id="characterImage" fitHeight="150.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" />
+            <Text fx:id="ocrText" strokeType="OUTSIDE" strokeWidth="0.0">
+               <font>
+                  <Font name="Times New Roman" size="20.0" />
+               </font></Text>
          </children>
       </VBox>
    </children>
