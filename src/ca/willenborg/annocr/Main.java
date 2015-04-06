@@ -10,7 +10,7 @@ import javafx.scene.Parent;
  
 public class Main extends Application {
 	
-	private CharacterImage characterImage;
+	private CharacterBounds characterImage;
 	
     public static void main(String[] args) {    	
         launch(args);
@@ -27,7 +27,7 @@ public class Main extends Application {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-        primaryStage.setScene(new Scene(root, 600, 400));
+        primaryStage.setScene(new Scene(root, 1024, 768));
         primaryStage.show();
     }
 }
