@@ -47,7 +47,7 @@ public class MainController {
         assert nextButton != null : "fx:id=\"binaryButton\" was not injected: check your FXML file 'main.fxml'.";
         assert previewImage != null : "fx:id=\"previewImage\" was not injected: check your FXML file 'main.fxml'.";
         
-        _docImage = new DocumentImage("document.png");
+        _docImage = new DocumentImage("sample\\sample1.png");
         _state = State.GreyScale;
         previewImage.setImage(_docImage.Image);
     }

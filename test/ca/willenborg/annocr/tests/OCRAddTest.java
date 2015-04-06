@@ -12,8 +12,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import ca.willenborg.annocr.OpticalCharacterRecognition;
-import ca.willenborg.annocr.TrainingCharacter;
+import ca.willenborg.annocr.ocr.OpticalCharacterRecognition;
+import ca.willenborg.annocr.ocr.TrainingCharacter;
 
 public class OCRAddTest {
 

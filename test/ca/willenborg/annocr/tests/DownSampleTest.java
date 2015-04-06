@@ -17,7 +17,7 @@ import com.sun.javafx.binding.BindingHelperObserver;
 import ca.willenborg.annocr.CharacterBounds;
 import ca.willenborg.annocr.DocumentImage;
 import ca.willenborg.annocr.LabeledBinaryImage;
-import ca.willenborg.annocr.OpticalCharacterRecognition;
+import ca.willenborg.annocr.ocr.OpticalCharacterRecognition;
 
 public class DownSampleTest
 {

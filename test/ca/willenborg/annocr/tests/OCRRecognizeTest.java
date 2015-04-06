@@ -9,7 +9,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import ca.willenborg.annocr.OpticalCharacterRecognition;
+import ca.willenborg.annocr.ocr.OpticalCharacterRecognition;
 
 public class OCRRecognizeTest {
 

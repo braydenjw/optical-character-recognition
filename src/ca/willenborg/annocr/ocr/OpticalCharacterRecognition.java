@@ -1,4 +1,4 @@
-package ca.willenborg.annocr;
+package ca.willenborg.annocr.ocr;
 
 import java.awt.Point;
 import java.util.ArrayList;

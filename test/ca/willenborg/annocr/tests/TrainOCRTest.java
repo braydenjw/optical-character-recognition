@@ -18,9 +18,9 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import ca.willenborg.annocr.OpticalCharacterRecognition;
-import ca.willenborg.annocr.TrainOCR;
 import ca.willenborg.annocr.Utilities;
+import ca.willenborg.annocr.ocr.OpticalCharacterRecognition;
+import ca.willenborg.annocr.ocr.TrainOCR;
 
 public class TrainOCRTest {
 	
